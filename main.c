@@ -10,8 +10,8 @@ double slit_width_mm=0.02;            // 单缝宽度单位为mm
 double screen_width_mm=0.3;           // 远处接收衍射图像屏幕的宽度，单位为mm
 double wavelength_nm=400;             // 光的波长，单位为nm
 double y_screen_dm=20;                // 屏幕距离单缝的距离，单位为dm
-double integrate_step=0.000001;      // 积分步长，单位为m
-double integrate_cuts_slit=1000;       // 单缝内积分切成几片
+double integrate_step=0.000001;       // 积分步长，单位为m
+double integrate_cuts_slit=1000;      // 单缝内积分切成几片
 double speed_of_light=300000000.0;    // 光速，单位为m/s
 
 // 计算单缝中一个点x_point，在屏幕上另一点x_screen，时间time时，产生的复振幅
