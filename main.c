@@ -7,10 +7,11 @@
 #include <gsl/gsl_complex_math.h>
 
 double slit_width_mm=0.02;            // 单缝宽度单位为mm
-double screen_width_mm=0.1;           // 远处接收衍射图像屏幕的宽度，单位为mm
+double screen_width_mm=0.3;           // 远处接收衍射图像屏幕的宽度，单位为mm
 double wavelength_nm=400;             // 光的波长，单位为nm
 double y_screen_dm=20;                // 屏幕距离单缝的距离，单位为dm
-double integrate_step=0.0000001;      // 积分步长，单位为m
+double integrate_step=0.000001;      // 积分步长，单位为m
+double integrate_cuts_slit=1000;       // 单缝内积分切成几片
 double speed_of_light=300000000.0;    // 光速，单位为m/s
 
 // 计算单缝中一个点x_point，在屏幕上另一点x_screen，时间time时，产生的复振幅
@@ -29,7 +30,7 @@ gsl_complex calculateComplexAmplitudeOnePoint(double x_point, double x_screen, d
 gsl_complex calculateComplexAmplitudeOneSlit(const double slit_position[], double x_screen, double time) {
     gsl_complex total_complex_amplitude=gsl_complex_rect(0,0);
     // 将缝拆分成100个点，然后用上面定义的函数计算复振幅，之后相加，再返回
-    for(double i=slit_position[0];i<=slit_position[1];i+=(slit_position[1]-slit_position[0])/1000) {
+    for(double i=slit_position[0];i<=slit_position[1];i+=(slit_position[1]-slit_position[0])/integrate_cuts_slit) {
         total_complex_amplitude =
                 gsl_complex_add(calculateComplexAmplitudeOnePoint(i, x_screen, time), total_complex_amplitude);
     }
@@ -37,10 +38,17 @@ gsl_complex calculateComplexAmplitudeOneSlit(const double slit_position[], doubl
 }
 
 // 计算双缝光强，两个缝的位置分别是slit_position_a和slit_position_b
-gsl_complex calculateComplexAmplitudeTwoSlits(const double slit_position_a[], const double slit_position_b[],
-                                              double x_screen, double time) {
-    return gsl_complex_add(calculateComplexAmplitudeOneSlit(slit_position_a, x_screen, time),
-                           calculateComplexAmplitudeOneSlit(slit_position_b, x_screen, time));
+gsl_complex calculateComplexAmplitudeMultiSlits(const double** slits_position, int number_of_slits,
+                                                double x_screen, double time) {
+    gsl_complex total_complex_amplitude=gsl_complex_rect(0,0);
+
+    for(int i=0; i<=number_of_slits; i++) {
+        total_complex_amplitude =
+                gsl_complex_add(total_complex_amplitude,
+                                calculateComplexAmplitudeOneSlit(slits_position[i], x_screen, time));
+    }
+
+    return total_complex_amplitude;
 }
 
 int main() {
@@ -50,18 +58,35 @@ int main() {
     FILE *fp;
     // 将数据保存在/tmp/data.dat这个文件下
     fp=fopen("/tmp/data.dat", "w");
+
     // 定义单缝的起始位置和终止位置
-    double slit_position_a[2] = {-5*slit_width_mm/2.0*pow(10,-3),-3*slit_width_mm/2.0*pow(10,-3)};
-    double slit_position_b[2] = {3*slit_width_mm/2.0*pow(10,-3),5*slit_width_mm/2.0*pow(10,-3)};
+    double slit_position_a[2] = {-7*slit_width_mm/2.0*pow(10,-3),-5*slit_width_mm/2.0*pow(10,-3)};
+    double slit_position_b[2] = {5*slit_width_mm/2.0*pow(10,-3),7*slit_width_mm/2.0*pow(10,-3)};
+    double slit_position_c[2] = {-3*slit_width_mm/2.0*pow(10,-3),-1*slit_width_mm/2.0*pow(10,-3)};
+    double slit_position_d[2] = {1*slit_width_mm/2.0*pow(10,-3),3*slit_width_mm/2.0*pow(10,-3)};
+    double* slits_position[4] = {slit_position_a, slit_position_b, slit_position_c, slit_position_d};
+    int number_of_slits = 4;
+
     // 计算光的一个周期的时间
     double period=wavelength_nm*pow(10,-9)/speed_of_light;
+
+    int progress=0;
+
     // 对全屏幕进行积分，写入屏幕上每一点的光强
     for(double y=-screen_width_mm/2.0; y<screen_width_mm/2.0; y+=integrate_step) {
         // 对屏幕上一个确定的点，计算一个周期内不同时间内的光强，再相加，之后计算平均光强，写入数据
+        if(progress <= (int)(100*(y+screen_width_mm/2.0)/(screen_width_mm))) {
+            progress++;
+            if(progress<10) {
+                printf("Current Progress: 0%d%%\n", progress);
+            } else {
+                printf("Current Progress: %d%%\n", progress);
+            }
+        }
         double light_intensity = 0;
         for(double time=0; time<period; time+=integrate_step) {
-            light_intensity+=gsl_pow_int(GSL_REAL(
-                    calculateComplexAmplitudeTwoSlits(slit_position_a,slit_position_b,y,time)),2);
+            light_intensity+=gsl_pow_int(
+                    GSL_REAL(calculateComplexAmplitudeMultiSlits(slits_position, number_of_slits, y, time)), 2);
         }
         fprintf(fp,"%f\t%f\n", y, light_intensity/(period/integrate_step));
     }
@@ -71,7 +96,7 @@ int main() {
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("程序已完成数据处理，总共使用的时间为：%f 秒\n", time_spent);
     printf("正在绘图...\n");
-//    system("gnuplot -e \"plot '/tmp/data.dat' with points\" -p");
+    system("gnuplot -e \"plot '/tmp/data.dat' with points\" -p");
     end = clock();
     time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("程序已完成绘图，总共使用的时间为：%f 秒\n", time_spent);
