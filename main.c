@@ -7,11 +7,11 @@
 #include <gsl/gsl_complex_math.h>
 
 double slit_width_mm = 0.02;            // silt width. measured in mm
-double screen_width_mm = 0.3;           // remote screen to receive diffraction result, measured in mm
-double wavelength_nm = 400;             // wavelength of light, measured in nm
-double y_screen_dm = 20;                // the distance between slits and screen, measured in dm
-double integrate_step = 0.000001;       // integrate step, measured in m, the smaller the preciser
-double integrate_cuts_slit = 10000;     // number of cuts when integrating inside a slit, the larger, the preciser
+double screen_width_mm = 0.1;           // remote screen to receive diffraction result, measured in mm
+double wavelength_nm = 632;             // wavelength of light, measured in nm
+double y_screen_dm = 10;                // the distance between slits and screen, measured in dm
+double integrate_step = 0.000001;     // integrate step, measured in m, the smaller the preciser
+double integrate_cuts_slit = 100;      // number of cuts when integrating inside a slit, the larger, the preciser
 double speed_of_light = 300000000.0;    // speed of light, measured in m/s
 
 /* for a single point inside a slit, positioned at x_point,
@@ -70,10 +70,28 @@ int main() {
     double* slits_position[4] = {slit_position_a, slit_position_b, slit_position_c, slit_position_d};
     int number_of_slits = 4;*/
 
+    /* Double slit fraunhofer diffraction */
+    /*const double slit_position_a[2] = {-5 * slit_width_mm / 2.0 * pow(10, -3), -3 * slit_width_mm / 2.0 * pow(10, -3)};
+    const double slit_position_b[2] = {3 * slit_width_mm / 2.0 * pow(10, -3), 5 * slit_width_mm / 2.0 * pow(10, -3)};
+    const double *slits_position[2] = {slit_position_a, slit_position_b};
+    int number_of_slits = 2;*/
+
+    /* Double slit fraunhofer diffraction */
+    const double slit_position_a[2] = {-3 * slit_width_mm / 2.0 * pow(10, -3), -1 * slit_width_mm / 2.0 * pow(10, -3)};
+    const double slit_position_b[2] = {1 * slit_width_mm / 2.0 * pow(10, -3), 3 * slit_width_mm / 2.0 * pow(10, -3)};
+    const double *slits_position[2] = {slit_position_a, slit_position_b};
+    int number_of_slits = 2;
+
+    /* Double slit fraunhofer diffraction */
+    /*const double slit_position_a[2] = {-3 * slit_width_mm / 2.0 * pow(10, -3), -1 * slit_width_mm / 2.0 * pow(10, -3)};
+    const double slit_position_b[2] = {1 * slit_width_mm / 2.0 * pow(10, -3), 3 * slit_width_mm / 2.0 * pow(10, -3)};
+    const double *slits_position[2] = {slit_position_a, slit_position_b};
+    int number_of_slits = 2;*/
+
     /* Single slit fraunhofer diffraction */
-    const double slit_position_a[2] = {-slit_width_mm / 2.0 * pow(10, -3), slit_width_mm / 2.0 * pow(10, -3)};
+    /*const double slit_position_a[2] = {-slit_width_mm / 2.0 * pow(10, -3), slit_width_mm / 2.0 * pow(10, -3)};
     const double *slits_position[1] = {slit_position_a};
-    int number_of_slits = 1;
+    int number_of_slits = 1;*/
 
     /* Calculate the period of light */
     double period = wavelength_nm * pow(10, -9) / speed_of_light;
@@ -81,14 +99,20 @@ int main() {
     int progress = 0;
 
     /* Integrate on the whole screen */
+    clock_t integrate_start = clock();
+    clock_t integrate_end = clock();
     for (double y = -screen_width_mm / 2.0; y < screen_width_mm / 2.0; y += integrate_step) {
-        if (progress <= (int) (100 * (y + screen_width_mm / 2.0) / (screen_width_mm))) {
+        if (progress < (int) (100 * (y + screen_width_mm / 2.0) / (screen_width_mm))) {
             progress++;
             if (progress < 10) {
-                printf("Current Progress: 0%d%%\n", progress);
+                printf("Current progress: 0%d%%\t", progress);
             } else {
-                printf("Current Progress: %d%%\n", progress);
+                printf("Current progress: %d%%\t", progress);
             }
+            integrate_end = clock();
+            double integrate_time_spent = (double) (integrate_end - integrate_start) / CLOCKS_PER_SEC;
+            printf("Estimated time left: %f s\n", (100 - progress) * integrate_time_spent);
+            integrate_start = clock();
         }
         /* Integrate on a period of light */
         double light_intensity = 0;
@@ -108,7 +132,7 @@ int main() {
     char *plot_cmd = malloc(sizeof(char) * 1024);
     sprintf(plot_cmd, "gnuplot -e \"set arrow from %f, graph 0 to %f, graph 1 nohead lc rgb 'red' ;"
                       "set arrow from -%f, graph 0 to -%f, graph 1 nohead lc rgb 'red' ;"
-                      "plot '/tmp/data.dat'\" -p &> /dev/null", draw_x, draw_x, draw_x, draw_x);
+                      "plot '/tmp/data.dat' using 1:2 pt 7 ps 0.1\" -p &> /dev/null", draw_x, draw_x, draw_x, draw_x);
     printf("lambda/d*l=%f\n",
            wavelength_nm * pow(10, -9) / (slit_width_mm * pow(10, -3)) * y_screen_dm * pow(10, -1));
     printf("Running gnuplot command: %s\n", plot_cmd);
