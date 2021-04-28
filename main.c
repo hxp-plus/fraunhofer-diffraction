@@ -6,12 +6,12 @@
 #include <gsl/gsl_complex.h>
 #include <gsl/gsl_complex_math.h>
 
-double slit_width_mm = 0.02;            // silt width. measured in mm
-double screen_width_mm = 0.1;           // remote screen to receive diffraction result, measured in mm
+double slit_width_mm = 2;            // silt width. measured in mm
+double screen_width_mm = 0.01;           // remote screen to receive diffraction result, measured in mm
 double wavelength_nm = 632;             // wavelength of light, measured in nm
 double y_screen_dm = 10;                // the distance between slits and screen, measured in dm
 double integrate_step = 0.000001;     // integrate step, measured in m, the smaller the preciser
-double integrate_cuts_slit = 100;      // number of cuts when integrating inside a slit, the larger, the preciser
+double integrate_cuts_slit = 1000;      // number of cuts when integrating inside a slit, the larger, the preciser
 double speed_of_light = 300000000.0;    // speed of light, measured in m/s
 
 /* for a single point inside a slit, positioned at x_point,
@@ -61,46 +61,47 @@ int main() {
     printf("[Program started]\n");
     FILE *fp;
     fp = fopen("/tmp/data.dat", "w");
-
-    /* Quad slit fraunhofer diffraction */
-    /*double slit_position_a[2] = {-7*slit_width_mm/2.0*pow(10,-3),-5*slit_width_mm/2.0*pow(10,-3)};
-    double slit_position_b[2] = {5*slit_width_mm/2.0*pow(10,-3),7*slit_width_mm/2.0*pow(10,-3)};
-    double slit_position_c[2] = {-3*slit_width_mm/2.0*pow(10,-3),-1*slit_width_mm/2.0*pow(10,-3)};
-    double slit_position_d[2] = {1*slit_width_mm/2.0*pow(10,-3),3*slit_width_mm/2.0*pow(10,-3)};
-    double* slits_position[4] = {slit_position_a, slit_position_b, slit_position_c, slit_position_d};
-    int number_of_slits = 4;*/
-
     /* Double slit fraunhofer diffraction */
-    /*const double slit_position_a[2] = {-5 * slit_width_mm / 2.0 * pow(10, -3), -3 * slit_width_mm / 2.0 * pow(10, -3)};
-    const double slit_position_b[2] = {3 * slit_width_mm / 2.0 * pow(10, -3), 5 * slit_width_mm / 2.0 * pow(10, -3)};
-    const double *slits_position[2] = {slit_position_a, slit_position_b};
-    int number_of_slits = 2;*/
-
-    /* Double slit fraunhofer diffraction */
-    const double slit_position_a[2] = {-3 * slit_width_mm / 2.0 * pow(10, -3), -1 * slit_width_mm / 2.0 * pow(10, -3)};
-    const double slit_position_b[2] = {1 * slit_width_mm / 2.0 * pow(10, -3), 3 * slit_width_mm / 2.0 * pow(10, -3)};
+    const double slit_position_a[2] = {-3 * slit_width_mm / 2.0 * pow(10, -3),
+                                       -1 * slit_width_mm / 2.0 * pow(10, -3)};
+    const double slit_position_b[2] = {1 * slit_width_mm / 2.0 * pow(10, -3),
+                                       3 * slit_width_mm / 2.0 * pow(10, -3)};
     const double *slits_position[2] = {slit_position_a, slit_position_b};
     int number_of_slits = 2;
 
     /* Double slit fraunhofer diffraction */
-    /*const double slit_position_a[2] = {-3 * slit_width_mm / 2.0 * pow(10, -3), -1 * slit_width_mm / 2.0 * pow(10, -3)};
-    const double slit_position_b[2] = {1 * slit_width_mm / 2.0 * pow(10, -3), 3 * slit_width_mm / 2.0 * pow(10, -3)};
+/*    const double slit_position_a[2] = {-5 * slit_width_mm / 2.0 * pow(10, -3),
+                                       -3 * slit_width_mm / 2.0 * pow(10, -3)};
+    const double slit_position_b[2] = {3 * slit_width_mm / 2.0 * pow(10, -3),
+                                       5 * slit_width_mm / 2.0 * pow(10, -3)};
     const double *slits_position[2] = {slit_position_a, slit_position_b};
     int number_of_slits = 2;*/
 
+/* Quad slit fraunhofer diffraction */
+/*    double slit_position_a[2] = {-7*slit_width_mm/2.0*pow(10,-3),
+                                 -5*slit_width_mm/2.0*pow(10,-3)};
+    double slit_position_b[2] = {5*slit_width_mm/2.0*pow(10,-3),
+                                 7*slit_width_mm/2.0*pow(10,-3)};
+    double slit_position_c[2] = {-3*slit_width_mm/2.0*pow(10,-3),
+                                 -1*slit_width_mm/2.0*pow(10,-3)};
+    double slit_position_d[2] = {1*slit_width_mm/2.0*pow(10,-3),
+                                 3*slit_width_mm/2.0*pow(10,-3)};
+    double* slits_position[4] = {slit_position_a, slit_position_b, slit_position_c, slit_position_d};
+    int number_of_slits = 4;*/
+
     /* Single slit fraunhofer diffraction */
-    /*const double slit_position_a[2] = {-slit_width_mm / 2.0 * pow(10, -3), slit_width_mm / 2.0 * pow(10, -3)};
+/*    const double slit_position_a[2] = {-slit_width_mm / 2.0 * pow(10, -3),
+                                       slit_width_mm / 2.0 * pow(10, -3)};
     const double *slits_position[1] = {slit_position_a};
     int number_of_slits = 1;*/
 
+
     /* Calculate the period of light */
     double period = wavelength_nm * pow(10, -9) / speed_of_light;
-
     int progress = 0;
-
     /* Integrate on the whole screen */
     clock_t integrate_start = clock();
-    clock_t integrate_end = clock();
+    clock_t integrate_end;
     for (double y = -screen_width_mm / 2.0; y < screen_width_mm / 2.0; y += integrate_step) {
         if (progress < (int) (100 * (y + screen_width_mm / 2.0) / (screen_width_mm))) {
             progress++;
@@ -118,28 +119,40 @@ int main() {
         double light_intensity = 0;
         for (double time = 0; time < period; time += integrate_step) {
             light_intensity += gsl_pow_int(
-                    GSL_REAL(calculateComplexAmplitudeMultiSlits(slits_position, number_of_slits, y, time)), 2);
+                    GSL_REAL(calculateComplexAmplitudeMultiSlits(
+                            (const double **) slits_position, number_of_slits, y, time)), 2);
         }
         fprintf(fp, "%f\t%f\n", y, light_intensity / (period / integrate_step));
     }
     fclose(fp);
-
     clock_t end = clock();
     double time_spent = (double) (end - begin) / CLOCKS_PER_SEC;
     printf("Data processing complete, time elapsed: %f s\n", time_spent);
     printf("Plotting...\n");
-    double draw_x = wavelength_nm * pow(10, -9) / (slit_width_mm * pow(10, -3)) * y_screen_dm * pow(10, -1);
+    double draw_x = wavelength_nm * pow(10, -9) /
+            (slit_width_mm * pow(10, -3)) * y_screen_dm * pow(10, -1);
     char *plot_cmd = malloc(sizeof(char) * 1024);
     sprintf(plot_cmd, "gnuplot -e \"set arrow from %f, graph 0 to %f, graph 1 nohead lc rgb 'red' ;"
                       "set arrow from -%f, graph 0 to -%f, graph 1 nohead lc rgb 'red' ;"
-                      "plot '/tmp/data.dat' using 1:2 pt 7 ps 0.1\" -p &> /dev/null", draw_x, draw_x, draw_x, draw_x);
+                      "plot '/tmp/data.dat' using 1:2 ps 0.01 with lines notitle\" -p &> /dev/null",
+                      draw_x, draw_x, draw_x, draw_x);
     printf("lambda/d*l=%f\n",
            wavelength_nm * pow(10, -9) / (slit_width_mm * pow(10, -3)) * y_screen_dm * pow(10, -1));
     printf("Running gnuplot command: %s\n", plot_cmd);
+//    setenv("DISPLAY", "172.29.32.1:0", 1);
     system(plot_cmd);
-    end = clock();
-    time_spent = (double) (end - begin) / CLOCKS_PER_SEC;
-    printf("Plotting completed, total time elapsed: %f s\n", time_spent);
-    printf("[Program exited gracefully]");
+    printf("Press any key to continue...\n");
+    getchar();
     return 0;
 }
+
+
+
+
+/* Double slit fraunhofer diffraction */
+/*const double slit_position_a[2] = {-5 * slit_width_mm / 2.0 * pow(10, -3), -3 * slit_width_mm / 2.0 * pow(10, -3)};
+const double slit_position_b[2] = {3 * slit_width_mm / 2.0 * pow(10, -3), 5 * slit_width_mm / 2.0 * pow(10, -3)};
+const double *slits_position[2] = {slit_position_a, slit_position_b};
+int number_of_slits = 2;*/
+
+
